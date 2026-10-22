@@ -9,6 +9,7 @@ class ReLU:
         self.Z = Z
         return np.maximum(0, Z)
 
-    def backward(self, dZ):
-        pass
+    def backward(self, dA):
+        dZ = np.where(self.Z > 0, dA, 0)
+        return dZ
         
