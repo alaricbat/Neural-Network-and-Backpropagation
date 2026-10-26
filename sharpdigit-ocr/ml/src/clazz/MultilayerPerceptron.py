@@ -36,6 +36,11 @@ class MultilayerPerceptron:
             b_i = np.zeros((1, num_layers[i + 1]))
             self.b.append(b_i)
 
+    def set_W(self, W):
+        self.W = W
+
+    def set_b(self, b):
+        self.b = b
 
     def forward(self, X):
 
