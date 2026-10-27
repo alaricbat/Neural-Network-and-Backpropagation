@@ -1,0 +1,2 @@
+# The example of the executing omp command
+-> g++-16 -std=c++17 -fopenmp main.cpp -o run/main

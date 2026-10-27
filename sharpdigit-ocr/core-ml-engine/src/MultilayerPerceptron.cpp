@@ -1,7 +1,13 @@
 
 #include "../include/MultilayerPerception.h"
 
+#include <cmath>
+#include <memory>
+#include <random>
+#include <stdexcept>
 #include <utility>
+#include <vector>
+#include <omp.h>
 
 MultilayerPerceptron::MultilayerPerceptron(
         int feature_size,
@@ -10,96 +16,106 @@ MultilayerPerceptron::MultilayerPerceptron(
         int epochs,
         float lr,
         int batch_size
-)
-        : feature_size(feature_size),
-          hidden_size(std::move(hidden_size)),
-          labels_num(labels_num),
-          epochs(epochs),
-          lr(lr),
-          batch_size(batch_size),
-          X_cache(0, 0),
-          relu(std::make_unique<ReLU>()),
-          softmax(std::make_shared<Softmax>()) {
+) :
+feature_size(feature_size),
+hidden_size(std::move(hidden_size)),
+labels_num(labels_num),
+epochs(epochs),
+lr(lr),
+batch_size(batch_size),
+X_cache(0, 0),
+relu(std::make_unique<ReLU>()),
+softmax(std::make_shared<Softmax>()) {
 
+    // 1. Validate configuration
     if (feature_size <= 0 ||
         labels_num <= 0 ||
         epochs <= 0 ||
+        !std::isfinite(lr) ||
         lr <= 0.0f ||
         batch_size <= 0) {
         throw std::invalid_argument(
-                "Invalid MLP configuration."
+                "[MultilayerPerceptron][constructor]: Invalid MLP configuration."
         );
     }
 
-    for (int i : hidden_size) {
-        if (i <= 0) {
+    for (int size : this->hidden_size) {
+        if (size <= 0) {
             throw std::invalid_argument(
-                    "Hidden layer size must be positive."
+                    "[MultilayerPerceptron][constructor]: Hidden layer size must be positive."
             );
         }
     }
 
-    // Build network dimensions:
+    // 2. Build dimensions:
     // Input -> Hidden layers -> Output
-    std::vector<int> num_layers;
-    num_layers.reserve(this->hidden_size.size() + 2);
+    std::vector<int> dimensions;
+    dimensions.reserve(this->hidden_size.size() + 2);
 
-    num_layers.push_back(feature_size);
+    dimensions.push_back(feature_size);
 
-    for (int i : hidden_size) {
-        num_layers.push_back(i);
+    for (int size : this->hidden_size) {
+        dimensions.push_back(size);
     }
 
-    num_layers.push_back(labels_num);
+    dimensions.push_back(labels_num);
+
+    // 3. Initialize weights and biases
+    W.reserve(dimensions.size() - 1);
+    b.reserve(dimensions.size() - 1);
 
     std::random_device rd;
-    std::mt19937 gen(rd());
+    const std::uint32_t base_seed = rd();
 
-    for (std::size_t i = 0;
-         i + 1 < num_layers.size();
-         ++i) {
+    for (std::size_t i = 0; i + 1 < dimensions.size(); ++i) {
 
-        const int fan_in = num_layers[i];
-        const int fan_out = num_layers[i + 1];
+        const int fan_in = dimensions[i];
+        const int fan_out = dimensions[i + 1];
 
-        // He initialization for hidden layers.
-        // A smaller Xavier-style scale for the output layer.
         const bool is_output_layer =
-                (i + 2 == num_layers.size());
+                (i + 2 == dimensions.size());
 
         const float scale = std::sqrt(
                 (is_output_layer ? 1.0f : 2.0f) /
                 static_cast<float>(fan_in)
         );
 
-        std::normal_distribution<float> dist(0.0f, scale);
+        Matrix weights(fan_in, fan_out);
 
-        Matrix w(fan_in, fan_out);
+        const std::size_t count = weights.data.size();
 
-        const std::size_t total_size =
-                static_cast<std::size_t>(w.rows) *
-                static_cast<std::size_t>(w.cols);
+        // Each thread gets its own RNG and distribution.
+        #pragma omp parallel default(none) shared(base_seed, scale, i, weights, count)
+        {
+            const int thread_id = omp_get_thread_num();
 
-        float* ptr = w.data.data();
+            std::mt19937 gen(
+                    base_seed +
+                    static_cast<std::uint32_t>(thread_id) * 7919U +
+                    static_cast<std::uint32_t>(i) * 104729U
+            );
 
-        for (std::size_t idx = 0; idx < w.data.size(); ++idx) {
-            ptr[idx] = dist(gen);
+            std::normal_distribution<float> distribution(
+                    0.0f, scale
+            );
+
+            #pragma omp for schedule(static)
+            for (std::size_t j = 0; j < count; ++j) {
+                weights.data[j] = distribution(gen);
+            }
         }
 
-        W.push_back(std::move(w));
-
-        // Bias shape: 1 x fan_out
-        Matrix bias(1, fan_out, 0.0f);
-        b.push_back(std::move(bias));
+        W.push_back(std::move(weights));
+        b.emplace_back(1, fan_out, 0.0f);
     }
 }
 
 void MultilayerPerceptron::set_W(
-        const std::vector<Matrix>& weights) {
-
+        const std::vector<Matrix>& weights
+) {
     if (weights.size() != W.size()) {
         throw std::invalid_argument(
-                "Weight layer count mismatch."
+                "[MultilayerPerceptron][set_W]: Weight layer count mismatch."
         );
     }
 
@@ -107,22 +123,20 @@ void MultilayerPerceptron::set_W(
         if (weights[i].rows != W[i].rows ||
             weights[i].cols != W[i].cols) {
             throw std::invalid_argument(
-                    "Weight matrix dimension mismatch."
+                    "[MultilayerPerceptron][set_W]: Weight matrix dimension mismatch."
             );
         }
     }
 
-    for (std::size_t i = 0; i < weights.size(); ++i) {
-        W[i] = weights[i];
-    }
+    W = weights;
 }
 
 void MultilayerPerceptron::set_b(
-        const std::vector<Matrix>& biases) {
-
+        const std::vector<Matrix>& biases
+) {
     if (biases.size() != b.size()) {
         throw std::invalid_argument(
-                "Bias layer count mismatch."
+                "[MultilayerPerceptron][set_b]: Bias layer count mismatch."
         );
     }
 
@@ -130,27 +144,24 @@ void MultilayerPerceptron::set_b(
         if (biases[i].rows != b[i].rows ||
             biases[i].cols != b[i].cols) {
             throw std::invalid_argument(
-                    "Bias matrix dimension mismatch."
+                    "[MultilayerPerceptron][set_b]: Bias matrix dimension mismatch."
             );
         }
     }
 
-    for (std::size_t i = 0; i < biases.size(); ++i) {
-        b[i] = biases[i];
-    }
+    b = biases;
 }
-
 
 Matrix MultilayerPerceptron::forward(const Matrix& X) {
     if (X.rows <= 0 || X.cols != feature_size) {
         throw std::invalid_argument(
-                "Input matrix dimension mismatch."
+                "[MultilayerPerceptron][forward]: Input matrix dimension mismatch."
         );
     }
 
-    if (W.empty()|| W.size() != b.size()) {
+    if (W.empty() || W.size() != b.size()) {
         throw std::runtime_error(
-                "Invalid network weights or biases."
+                "[MultilayerPerceptron][forward]: Invalid network weights or biases."
         );
     }
 
@@ -159,35 +170,39 @@ Matrix MultilayerPerceptron::forward(const Matrix& X) {
     Z_cache.clear();
     A_cache.clear();
 
-    A_cache.push_back(X);
-
-    Matrix current_input = X;
-
     const std::size_t num_layers = W.size();
 
+    Z_cache.reserve(num_layers);
+    A_cache.reserve(num_layers + 1);
+
+    A_cache.push_back(X);
+
     for (std::size_t i = 0; i < num_layers; ++i) {
-        Matrix z = Matrix::matmul(current_input, W[i]);
+        const Matrix& layer_input = A_cache.back();
+
+        // Matrix::matmul can be parallelized internally.
+        Matrix z = Matrix::matmul(layer_input, W[i]);
+
         z.addBiasRow(b[i]);
+        Z_cache.push_back(std::move(z));
 
-        Z_cache.push_back(z);
+        const Matrix& current_z = Z_cache.back();
 
-        Matrix out = (i == num_layers - 1)
-                     ? softmax->forward(z)
-                     : relu->forward(z);
+        Matrix output =
+                (i + 1 == num_layers)
+                ? softmax->forward(current_z)
+                : relu->forward(current_z);
 
-        A_cache.push_back(out);
-
-        current_input = out;
+        A_cache.push_back(std::move(output));
     }
 
-    return current_input;
+    return A_cache.back();
 }
-
 
 int MultilayerPerceptron::predict(const Matrix& X) {
     if (X.rows != 1) {
         throw std::invalid_argument(
-                "predict() expects exactly one sample."
+                "[MultilayerPerceptron][predict]: expects exactly one sample."
         );
     }
 
@@ -195,16 +210,18 @@ int MultilayerPerceptron::predict(const Matrix& X) {
 
     if (output.cols != labels_num || output.cols <= 0) {
         throw std::runtime_error(
-                "Unexpected output matrix dimension."
+                "[MultilayerPerceptron][predict]: Unexpected output matrix dimension."
         );
     }
 
     int best_class = 0;
-    float max_val = output(0, 0);
+    float max_value = output(0, 0);
 
     for (int j = 1; j < output.cols; ++j) {
-        if (output(0, j) > max_val) {
-            max_val = output(0, j);
+        const float value = output(0, j);
+
+        if (value > max_value) {
+            max_value = value;
             best_class = j;
         }
     }
