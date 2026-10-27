@@ -19,6 +19,14 @@ add_executable(core_ml_engine
         src/Softmax.cpp
         include/MultilayerPerception.h
         src/MultilayerPerceptron.cpp
+        include/interface/IMatrixReader.h
+        include/reader/TxtMatrixReader.h
+        src/TxtMatrixReader.cpp
+        include/weight/ModelWeight.h
+        include/weight/ModelWeightReader.h
+        src/ModelWeightReader.cpp
+        include/reader/BinaryMatrixReader.h
+        src/BinaryMatrixReader.cpp
 )
 
 target_include_directories(core_ml_engine PRIVATE
