@@ -1,5 +1,5 @@
 #include <complex>
-#include "../include/Softmax.h"
+#include "ml/Softmax.h"
 
 Softmax::Softmax() : lastOut(0, 0) {}
 

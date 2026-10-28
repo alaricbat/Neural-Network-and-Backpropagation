@@ -1,4 +1,4 @@
-#include "../include/Matrix.h"
+#include "ml/Matrix.h"
 
 Matrix::Matrix(int r, int c, float initial_value):
     rows(r), cols(c), data(r * c, initial_value){}
@@ -11,7 +11,7 @@ const float &Matrix::operator()(int r, int c) const {
     return data[r * cols + c];
 }
 
-Matrix Matrix::matmul(const Matrix& A, const Matrix& B) {
+Matrix Matrix::dot(const Matrix& A, const Matrix& B) {
     if (A.cols != B.rows) {
         throw std::invalid_argument(
                 "[Matrix][matmul]: Matrix dimensions do not match for multiplication."

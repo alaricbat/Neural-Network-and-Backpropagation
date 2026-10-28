@@ -1,7 +1,7 @@
 #ifndef CORE_ML_ENGINE_IACTIVATION_H
 #define CORE_ML_ENGINE_IACTIVATION_H
 
-#include "../Matrix.h"
+#include "ml/Matrix.h"
 
 class IActivation {
 public:

@@ -1,5 +1,5 @@
-#include "weight/ModelWeightReader.h"
-#include "reader/BinaryMatrixReader.h"
+#include "ml/weight/ModelWeightReader.h"
+#include "ml/reader/BinaryMatrixReader.h"
 
 ModelWeights ModelWeightReader::read(
         const std::filesystem::path &model_dir

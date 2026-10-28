@@ -16,7 +16,7 @@ public:
     float& operator()(int r, int c);
     const float& operator()(int r, int c) const;
 
-    [[nodiscard]] static Matrix matmul(const Matrix& A, const Matrix& B);
+    [[nodiscard]] static Matrix dot(const Matrix& A, const Matrix& B);
     [[nodiscard]] Matrix transpose() const;
 
     void addBiasRow(const Matrix& bias);

@@ -1,5 +1,5 @@
 
-#include "../include/MultilayerPerception.h"
+#include "ml/MultilayerPerception.h"
 
 #include <memory>
 #include <stdexcept>
@@ -54,7 +54,7 @@ Matrix MultilayerPerceptron::forward(const Matrix& X) {
         const Matrix& layer_input = A_cache.back();
 
         // Matrix::matmul can be parallelized internally.
-        Matrix z = Matrix::matmul(layer_input, W[i]);
+        Matrix z = Matrix::dot(layer_input, W[i]);
 
         z.addBiasRow(b[i]);
         Z_cache.push_back(std::move(z));

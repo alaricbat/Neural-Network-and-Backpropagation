@@ -12,7 +12,7 @@
 #include "Matrix.h"
 #include "ReLU.h"
 #include "Softmax.h"
-#include "interface/IActivation.h"
+#include "ml/interface/IActivation.h"
 
 class MultilayerPerceptron {
 private:

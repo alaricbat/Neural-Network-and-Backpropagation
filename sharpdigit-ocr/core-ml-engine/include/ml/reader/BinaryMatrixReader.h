@@ -3,7 +3,7 @@
 #define CORE_ML_ENGINE_BINARYMATRIXREADER_H
 
 #include "filesystem"
-#include "../include/Matrix.h"
+#include "ml/Matrix.h"
 
 class BinaryMatrixReader {
 public:

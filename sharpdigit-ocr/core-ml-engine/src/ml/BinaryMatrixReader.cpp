@@ -1,6 +1,6 @@
 
-#include "../include/reader/BinaryMatrixReader.h"
-#include "Matrix.h"
+#include "ml/reader/BinaryMatrixReader.h"
+#include "ml/Matrix.h"
 
 #include <fstream>
 #include <limits>

@@ -2,9 +2,9 @@
 #include <memory>
 #include <omp.h>
 #include <filesystem>
-#include "reader/TxtMatrixReader.h"
-#include "weight/ModelWeightReader.h"
-#include "include/MultilayerPerception.h"
+#include "include/ml/reader/TxtMatrixReader.h"
+#include "include/ml/weight/ModelWeightReader.h"
+#include "ml/MultilayerPerception.h"
 
 using namespace std;
 int main() {

@@ -1,7 +1,7 @@
 #ifndef CORE_ML_ENGINE_TXTMATRIXREADER_H
 #define CORE_ML_ENGINE_TXTMATRIXREADER_H
 
-#include "interface/IMatrixReader.h"
+#include "ml/interface/IMatrixReader.h"
 
 class TxtMatrixReader : public IMatrixReader {
 

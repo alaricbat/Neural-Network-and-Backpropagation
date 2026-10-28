@@ -2,7 +2,7 @@
 #define CORE_ML_ENGINE_RELU_H
 
 #include "Matrix.h"
-#include "interface/IActivation.h"
+#include "ml/interface/IActivation.h"
 
 class ReLU : public IActivation {
 

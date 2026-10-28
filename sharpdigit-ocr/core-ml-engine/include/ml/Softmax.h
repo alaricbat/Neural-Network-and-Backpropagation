@@ -1,7 +1,7 @@
 #ifndef CORE_ML_ENGINE_SOFTMAX_H
 #define CORE_ML_ENGINE_SOFTMAX_H
 
-#include "interface/IActivation.h"
+#include "ml/interface/IActivation.h"
 
 class Softmax: public IActivation {
 
