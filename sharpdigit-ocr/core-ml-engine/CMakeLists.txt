@@ -12,6 +12,10 @@ find_package(OpenCV 4.9 REQUIRED COMPONENTS
     core imgproc imgcodecs
 )
 
+message(STATUS "OpenCV version: ${OpenCV_VERSION}")
+message(STATUS "OpenCV directory: ${OpenCV_DIR}")
+message(STATUS "OpenCV libraries: ${OpenCV_LIBS}")
+
 add_executable(core_ml_engine
         main.cpp
         include/ml/Matrix.h
@@ -53,5 +57,6 @@ target_include_directories(core_ml_engine PRIVATE
 )
 
 target_link_libraries(core_ml_engine PRIVATE
+        ${OpenCV_LIBS}
         OpenMP::OpenMP_CXX
 )

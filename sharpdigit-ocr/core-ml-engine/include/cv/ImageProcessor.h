@@ -13,16 +13,21 @@
 
 class ImageProcessor {
 public:
+
+    ImageProcessor();
+
     ImageProcessor(
-            std::unique_ptr<IImageFilter>,
-            std::unique_ptr<IDigitCropper>,
-            std::unique_ptr<IImageResizer>,
-            std::unique_ptr<IImageToMatrix>);
+            std::unique_ptr<IImageFilter> filter,
+            std::unique_ptr<IDigitCropper> cropper,
+            std::unique_ptr<IImageResizer> resizer,
+            std::unique_ptr<IImageToMatrix> converter
+    );
+
     [[nodiscard]]
     Matrix process(const cv::Mat& img) const;
 
 private:
-    std::unique_ptr<IImageToMatrix> filter_;
+    std::unique_ptr<IImageFilter> filter_;
     std::unique_ptr<IDigitCropper> cropper_;
     std::unique_ptr<IImageResizer> resizer_;
     std::unique_ptr<IImageToMatrix> converter_;

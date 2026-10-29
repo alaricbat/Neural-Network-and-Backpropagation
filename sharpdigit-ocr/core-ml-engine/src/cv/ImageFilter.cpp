@@ -22,7 +22,7 @@ cv::Mat ImageFilter::apply(const cv::Mat &img) const {
 
     // 1. Gaussian Blur
     cv::Mat blurred;
-    cv::GaussianBlur(img, blurred, cv::Size(11, 11), 0);
+    cv::GaussianBlur(gray, blurred, cv::Size(11, 11), 0);
 
     // 2. Sharpen
     const cv::Mat sharpen_kernel = (

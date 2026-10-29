@@ -2,8 +2,11 @@
 #include <memory>
 #include <omp.h>
 #include <filesystem>
+#include <opencv2/core.hpp>
+#include <opencv2/imgcodecs.hpp>
 #include "include/ml/reader/TxtMatrixReader.h"
 #include "include/ml/weight/ModelWeightReader.h"
+#include "include/cv/ImageProcessor.h"
 #include "ml/MultilayerPerception.h"
 
 using namespace std;
@@ -21,16 +24,6 @@ int main() {
             }
         }
 
-        const std::filesystem::path path = filesystem::current_path() / "asset" / "test" / "matrix_09.txt";
-
-        // Dependency injection through the interface
-        std::unique_ptr<IMatrixReader> reader =
-                std::make_unique<TxtMatrixReader>(784);
-        Matrix input = reader->read(path);
-
-        cout << "[main]: Image loaded successfully." << endl;
-        cout << "[main]: Input shape: " << input.rows << " x " << input.cols << endl;
-
         MultilayerPerceptron multilayer = MultilayerPerceptron();
 
         const auto model_dir = std::filesystem::current_path() / "asset" / "model";
@@ -38,9 +31,38 @@ int main() {
         multilayer.set_W(model_weights.weights);
         multilayer.set_b(model_weights.biases);
 
-        int result = multilayer.predict(input);
+        for (int i = 0; i < 10; i++) {
 
-        cout << "[main]: The final result is: " << result << endl;
+            const std::string filename = "matrix_0" + std::to_string(i) + ".txt";
+            const std::filesystem::path path = filesystem::current_path() / "asset" / "test" / filename;
+
+            // Dependency injection through the interface
+            std::unique_ptr<IMatrixReader> reader =
+                    std::make_unique<TxtMatrixReader>(784);
+            Matrix input = reader->read(path);
+
+            int result = multilayer.predict(input);
+
+            cout << "[main]: The final result is: " << result << endl;
+        }
+
+        cout << "[main]: *** (OpenCV2) ***" << endl;
+
+        for (int i = 0; i < 10; i++) {
+
+            const std::string filename = "mnist_0" + std::to_string(i) + ".jpg";
+            cout << "[main]: >> The file  name: " << filename << endl;
+            const std::filesystem::path img_path = filesystem::current_path() / "asset" / "images" / filename;
+
+            cv::Mat img = cv::imread(img_path);
+
+            ImageProcessor processor;
+            Matrix processed_matrix = processor.process(img);
+            int processed_result = multilayer.predict(processed_matrix);
+
+            cout << "[main]: The processed result is: " << processed_result << endl;
+        }
+
         cout << "[main]: Execute completed." << endl;
 
     } catch (const std::exception &e) {
