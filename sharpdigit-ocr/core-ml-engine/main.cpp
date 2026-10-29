@@ -26,7 +26,7 @@ int main() {
 
         MultilayerPerceptron multilayer = MultilayerPerceptron();
 
-        const auto model_dir = std::filesystem::current_path() / "asset" / "model";
+        const auto model_dir = std::filesystem::current_path() / "assets" / "model";
         ModelWeights model_weights = ModelWeightReader::read(model_dir);
         multilayer.set_W(model_weights.weights);
         multilayer.set_b(model_weights.biases);
@@ -34,7 +34,7 @@ int main() {
         for (int i = 0; i < 10; i++) {
 
             const std::string filename = "matrix_0" + std::to_string(i) + ".txt";
-            const std::filesystem::path path = filesystem::current_path() / "asset" / "test" / filename;
+            const std::filesystem::path path = filesystem::current_path() / "assets" / "test" / filename;
 
             // Dependency injection through the interface
             std::unique_ptr<IMatrixReader> reader =
@@ -52,7 +52,7 @@ int main() {
 
             const std::string filename = "mnist_0" + std::to_string(i) + ".jpg";
             cout << "[main]: >> The file  name: " << filename << endl;
-            const std::filesystem::path img_path = filesystem::current_path() / "asset" / "images" / filename;
+            const std::filesystem::path img_path = filesystem::current_path() / "assets" / "images" / filename;
 
             cv::Mat img = cv::imread(img_path);
 

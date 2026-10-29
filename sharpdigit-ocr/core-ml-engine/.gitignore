@@ -3,6 +3,7 @@ cmake-build-*/
 build/
 cmake-build-debug/
 cmake-build-release/
+third_party/
 
 # CMake generated files
 CMakeFiles/
