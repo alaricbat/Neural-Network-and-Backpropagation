@@ -6,7 +6,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.MaterialTheme
 import com.advance.neuraldigit_ocr.screens.CameraScreen
-import com.advance.neuraldigit_ocr.viewmodel.OcrViewModel
 
 class MainActivity : ComponentActivity() {
 

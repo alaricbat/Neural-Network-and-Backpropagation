@@ -75,7 +75,7 @@ namespace {
 
 extern "C"
 JNIEXPORT jboolean JNICALL
-Java_com_advance_neuraldigit_ocr_NativeOcr_nativeInit(
+Java_com_advance_neuraldigit_1ocr_utils_NativeOcr_nativeInit(
         JNIEnv* env,
         jobject,
         jstring modelDirectory
@@ -124,7 +124,7 @@ Java_com_advance_neuraldigit_ocr_NativeOcr_nativeInit(
 
 extern "C"
 JNIEXPORT jint JNICALL
-Java_com_advance_neuraldigit_ocr_NativeOcr_nativePredict(
+Java_com_advance_neuraldigit_1ocr_utils_NativeOcr_nativePredict(
         JNIEnv* env,
         jobject /* thiz */,
         jobject bitmap

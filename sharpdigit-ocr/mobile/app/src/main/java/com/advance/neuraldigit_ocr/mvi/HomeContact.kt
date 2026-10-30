@@ -1,27 +1,21 @@
 package com.advance.neuraldigit_ocr.mvi
 
-import com.advance.neuraldigit_ocr.state.CameraPermissionState
+import com.advance.neuraldigit_ocr.state.CameraScreenState
 
-data class HomeUiState(
-    val cameraPermission: CameraPermissionState = CameraPermissionState.UNKNOWN,
-    val isCameraStarted: Boolean = false,
-    val isCameraReady: Boolean = false,
-    val isCapturing: Boolean = false,
-    val isRecognizing: Boolean = false,
-    val capturedImagePath: String? = null,
-    val recognizedText: String? = null,
-    val errorMessage: String? = null
+data class CameraUiState(
+    val cameraScreenState: CameraScreenState = CameraScreenState.IDLE
 )
 
 sealed interface CameraIntent {
-    data object RequestCameraPermission: CameraIntent
-    data object CapturedClick : CameraIntent
-    data object RetryClicked: CameraIntent
+    data object RequestCameraPermission : CameraIntent
+    data object CapturedClicked : CameraIntent
+    data object PredictClicked : CameraIntent
+    data object CameraCancel : CameraIntent
 }
 
 sealed interface CameraEffect {
-    data object RequestCameraPermission: CameraEffect
-    data object StartCamera: CameraEffect
-    data object StopCamera: CameraEffect
-    data class ShowError(val msg: String): CameraEffect
+    data object RequestCameraPermission : CameraEffect
+    data object StartCamera : CameraEffect
+    data object StopCamera : CameraEffect
+    data class ShowError(val msg: String) : CameraEffect
 }

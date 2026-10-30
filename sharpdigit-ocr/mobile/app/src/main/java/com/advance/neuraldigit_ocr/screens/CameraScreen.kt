@@ -1,13 +1,14 @@
 package com.advance.neuraldigit_ocr.screens
 
 import android.Manifest
-import android.app.Activity
-import android.content.Context
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -26,22 +27,22 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import com.advance.neuraldigit_ocr.R
 import com.advance.neuraldigit_ocr.factories.ViewModelFactory
 import com.advance.neuraldigit_ocr.mvi.CameraEffect
 import com.advance.neuraldigit_ocr.mvi.CameraIntent
-import com.advance.neuraldigit_ocr.state.CameraPermissionState
+import com.advance.neuraldigit_ocr.state.CameraScreenState
 import com.advance.neuraldigit_ocr.utils.Logger
-import com.advance.neuraldigit_ocr.utils.TakePhotoUtil
 import com.advance.neuraldigit_ocr.viewmodel.OcrViewModel
 
 private val TAG = "CameraScreen"
 
+@SuppressLint("StateFlowValueCalledInComposition")
 @Composable
 fun CameraScreen() {
 
@@ -49,7 +50,7 @@ fun CameraScreen() {
 
     val owner = context as ViewModelStoreOwner
 
-    val viewModel = remember(owner) {
+    val vm = remember(owner) {
         ViewModelProvider(
             owner,
             ViewModelFactory()
@@ -59,20 +60,20 @@ fun CameraScreen() {
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
-        val permissionState = if (granted) {
-            CameraPermissionState.GRANTED
+        val state = if (granted) {
+            CameraScreenState.CAMERA_GRANTED
         } else {
-            CameraPermissionState.DENIED
+            CameraScreenState.IDLE
         }
-        viewModel.onPermissionResult(permissionState)
+        vm.onStateChanged(state)
     }
 
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val uiState by vm.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(viewModel) {
+    LaunchedEffect(vm) {
         Logger.info(TAG, "[LaunchedEffect]: execute.")
 
-        viewModel.effect.collect { effect ->
+        vm.effect.collect { effect ->
             Logger.info(TAG, "[LaunchedEffect]: received => $effect")
             when (effect) {
                 CameraEffect.RequestCameraPermission -> {
@@ -85,12 +86,12 @@ fun CameraScreen() {
 
                 CameraEffect.StartCamera -> {
                     Logger.info(TAG, "[LaunchedEffect]: effect => CameraEffect.StartCamera")
-                    viewModel.onCameraStarted()
+                    vm.onStateChanged(CameraScreenState.CAMERA_PREVIEW)
                 }
 
                 CameraEffect.StopCamera -> {
                     Logger.info(TAG, "[LaunchedEffect]: effect => CameraEffect.StopCamera")
-                    viewModel.onCameraClosed()
+                    vm.onStateChanged(CameraScreenState.CAMERA_PREVIEW_CANCEL)
                 }
 
                 is CameraEffect.ShowError -> {
@@ -105,24 +106,13 @@ fun CameraScreen() {
             context,
             Manifest.permission.CAMERA
         ) == PackageManager.PERMISSION_GRANTED
-        val permissionState = if (granted) {
-            CameraPermissionState.GRANTED
+        val state = if (granted) {
+            CameraScreenState.CAMERA_GRANTED
         } else {
-            CameraPermissionState.DENIED
+            CameraScreenState.IDLE
         }
-
-        val shouldShowRationale =
-            ActivityCompat.shouldShowRequestPermissionRationale(
-                context as Activity,
-                Manifest.permission.CAMERA
-            )
-
-        Logger.info(
-            TAG,
-            "[LaunchedEffect-PermissionCheck]: granted=$granted, rationale=$shouldShowRationale"
-        )
-
-        viewModel.onPermissionResult(permissionState)
+        vm.onStateChanged(state)
+        vm.initModel()
     }
 
     Column(
@@ -133,30 +123,49 @@ fun CameraScreen() {
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)
     ) {
 
-        when (uiState.isCameraStarted) {
-            true -> {
-                StartCameraComponents(context, viewModel)
+        when (uiState.cameraScreenState) {
+            CameraScreenState.IDLE -> {
+                Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.IDLE")
+                UngrantedComponents(vm, R.string.str_camera_idle)
             }
-
-            false -> {
-                Logger.info(TAG, "[uiState.isCameraStarted]: camera is closed.")
+            CameraScreenState.CAMERA_GRANTED -> {
+                Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.CAMERA_GRANTED")
+                GrantedComponents(vm)
             }
-        }
-
-        when (uiState.cameraPermission) {
-
-            CameraPermissionState.UNKNOWN -> {
-                UngrantedComponents(viewModel, R.string.str_camera_is_first_access)
+            CameraScreenState.CAMERA_PREVIEW -> {
+                Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.CAMERA_PREVIEW")
+                StartCameraComponents(vm)
             }
-
-            CameraPermissionState.GRANTED -> {
-                GrantedComponents(viewModel)
+            CameraScreenState.CAMERA_PREVIEW_CANCEL -> {
+                Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.CAMERA_PREVIEW_CANCEL")
+                if (vm.data.value.capturedImagePath != null) {
+                    vm.onStateChanged(CameraScreenState.IMAGE_PREVIEW)
+                } else {
+                    vm.onStateChanged(CameraScreenState.CAMERA_GRANTED)
+                }
             }
-
-            CameraPermissionState.DENIED -> {
-                UngrantedComponents(viewModel, R.string.str_camera_is_denied)
+            CameraScreenState.CAPTURE_PROCESSING -> {
+                Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.CAPTURE_PROCESSING")
             }
-
+            CameraScreenState.CAPTURE_FINISH -> {
+                Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.CAPTURE_FINISH")
+                vm.onStateChanged(CameraScreenState.IMAGE_PREVIEW)
+            }
+            CameraScreenState.IMAGE_PREVIEW -> {
+                Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.IMAGE_PREVIEW")
+                CapturedImageComponents(vm)
+            }
+            CameraScreenState.OCR_PROCESSING -> {
+                Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.OCR_PROCESSING")
+            }
+            CameraScreenState.OCR_FINISH -> {
+                Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.OCR_FINISH")
+                Toast.makeText(context, vm.data.value.predictedValue, Toast.LENGTH_SHORT)
+                vm.onStateChanged(CameraScreenState.IMAGE_PREVIEW)
+            }
+            CameraScreenState.ERROR -> {
+                Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.ERROR")
+            }
         }
     }
 
@@ -196,7 +205,7 @@ private fun GrantedComponents(viewModel: OcrViewModel) {
         modifier = Modifier.fillMaxWidth(),
         onClick = {
             Logger.info(TAG, "[GrantedComponents][CapturedClick-Button]: execute.")
-            viewModel.onIntent(CameraIntent.CapturedClick)
+            viewModel.onIntent(CameraIntent.CapturedClicked)
         }
     ) {
         Text(
@@ -206,7 +215,7 @@ private fun GrantedComponents(viewModel: OcrViewModel) {
 }
 
 @Composable
-private fun StartCameraComponents(context: Context, vm: OcrViewModel) {
+private fun StartCameraComponents(vm: OcrViewModel) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -224,17 +233,59 @@ private fun StartCameraComponents(context: Context, vm: OcrViewModel) {
         )
         Button(
             onClick = {
-                vm.data.value.imageCapture?.let { capture ->
-                    TakePhotoUtil.takePhoto(
-                        context = context,
-                        imageCapture = capture
-                    )
-                }
+                vm.capturePhoto()
             }
         ) {
             Text(stringResource(R.string.str_capture))
         }
     }
+}
+
+@SuppressLint("StateFlowValueCalledInComposition")
+@Composable
+private fun CapturedImageComponents(vm: OcrViewModel) {
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        AsyncImage(
+            model = vm.data.value.capturedImagePath,
+            contentDescription = "",
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(2f),
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    Logger.info(TAG, "[CapturedImageComponent][PredictClicked-Button]: execute.")
+                    vm.onIntent(CameraIntent.PredictClicked)
+                }
+            ) {
+                Text(
+                    text = stringResource(R.string.str_predict)
+                )
+            }
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    Logger.info(TAG, "[CapturedImageComponent][CapturedClick-Button]: execute.")
+                    vm.onIntent(CameraIntent.CapturedClicked)
+                }
+            ) {
+                Text(
+                    text = stringResource(R.string.str_capture_image)
+                )
+            }
+        }
+    }
+
 }
 
 @Preview

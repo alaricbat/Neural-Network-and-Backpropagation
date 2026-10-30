@@ -17,6 +17,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.advance.neuraldigit_ocr.factories.ViewModelFactory
+import com.advance.neuraldigit_ocr.mvi.CameraIntent
+import com.advance.neuraldigit_ocr.state.CameraScreenState
 import com.advance.neuraldigit_ocr.utils.Logger
 import com.advance.neuraldigit_ocr.viewmodel.OcrViewModel
 
@@ -32,7 +34,7 @@ fun CameraPreview(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val owner = context as ViewModelStoreOwner
-    val viewModel = remember(owner) {
+    val vm = remember(owner) {
         ViewModelProvider(
             owner,
             ViewModelFactory()
@@ -40,8 +42,8 @@ fun CameraPreview(
     }
 
     BackHandler {
-        if (viewModel.uiState.value.isCameraStarted) {
-            viewModel.onCameraClosed()
+        if (vm.uiState.value.cameraScreenState == CameraScreenState.CAMERA_PREVIEW) {
+            vm.onIntent(CameraIntent.CameraCancel)
         }
     }
 

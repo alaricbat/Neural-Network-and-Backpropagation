@@ -1,26 +1,34 @@
 package com.advance.neuraldigit_ocr.viewmodel
 
+import android.net.Uri
 import androidx.camera.core.ImageCapture
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.advance.neuraldigit_ocr.data.OcrData
 import com.advance.neuraldigit_ocr.mvi.CameraEffect
 import com.advance.neuraldigit_ocr.mvi.CameraIntent
-import com.advance.neuraldigit_ocr.mvi.HomeUiState
-import com.advance.neuraldigit_ocr.state.CameraPermissionState
+import com.advance.neuraldigit_ocr.mvi.CameraUiState
+import com.advance.neuraldigit_ocr.state.CameraScreenState
+import com.advance.neuraldigit_ocr.usecase.TakeImageUseCase
+import com.advance.neuraldigit_ocr.utils.BitmapFactory
+import com.advance.neuraldigit_ocr.utils.Context
 import com.advance.neuraldigit_ocr.utils.Logger
+import com.advance.neuraldigit_ocr.utils.ModelAssetManager
+import com.advance.neuraldigit_ocr.utils.NativeOcr
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
 
 private const val TAG = "OcrViewModel"
 
-class OcrViewModel : ViewModel(), IViewModelBehavior {
+class OcrViewModel() : ViewModel(), IViewModelBehavior {
 
-    private val _uiState = MutableStateFlow(HomeUiState())
+    private val _uiState = MutableStateFlow(CameraUiState())
     val uiState = _uiState.asStateFlow()
 
     private val _effect = Channel<CameraEffect>()
@@ -28,6 +36,8 @@ class OcrViewModel : ViewModel(), IViewModelBehavior {
 
     private val _data = MutableStateFlow(OcrData())
     val data = _data.asStateFlow()
+
+    private val _takeImageUseCase = TakeImageUseCase()
 
     fun setImageCapture(imageCapture: ImageCapture?) {
         _data.update {
@@ -52,7 +62,7 @@ class OcrViewModel : ViewModel(), IViewModelBehavior {
 
             }
 
-            CameraIntent.CapturedClick -> {
+            CameraIntent.CapturedClicked -> {
                 Logger.info(
                     TAG,
                     "[onIntent]: intent => CapturedClick"
@@ -62,40 +72,84 @@ class OcrViewModel : ViewModel(), IViewModelBehavior {
                 }
             }
 
-            CameraIntent.RetryClicked -> {
+            CameraIntent.PredictClicked -> {
                 Logger.info(
                     TAG,
-                    "[onIntent]: intent => RetryClicked"
+                    "[onIntent]: intent => PredictClicked"
                 )
+                viewModelScope.launch(Dispatchers.IO) {
+                    try {
+                        val uri = _data.value.capturedImagePath
+                            ?: throw IllegalStateException("Image URI is null")
+                        val bitmap = BitmapFactory.uriToBitmap(Context.get(), uri)
+                        val result = NativeOcr.nativePredict(bitmap)
+                        _data.update {
+                            it.copy(
+                                predictedValue = result
+                            )
+                        }
+                        onStateChanged(CameraScreenState.OCR_FINISH)
+                    } catch (e: Exception) {
+                        Logger.error(TAG, "[onIntent][PredictClicked]: ", e)
+                    }
+                }
+            }
+
+            CameraIntent.CameraCancel -> {
+                Logger.info(
+                    TAG,
+                    "[onIntent]: intent => CameraCancel"
+                )
+                viewModelScope.launch {
+                    _effect.send(CameraEffect.StopCamera)
+                }
             }
         }
     }
 
-    override fun onPermissionResult(cameraPermissionState: CameraPermissionState) {
+    override fun onStateChanged(state: CameraScreenState) {
         Logger.info(TAG, "[onPermissionResult]: execute.")
         _uiState.update {
             it.copy(
-                cameraPermission = cameraPermissionState,
-                isCameraReady = cameraPermissionState == CameraPermissionState.GRANTED
+                cameraScreenState = state
             )
         }
     }
 
-    override fun onCameraStarted() {
-        Logger.info(TAG, "[onCameraStarted]: execute.")
-        _uiState.update {
-            it.copy(
-                isCameraStarted = true
-            )
-        }
+    override fun updateCapturedImage(path: String) {
+        Logger.info(TAG, "[onCameraCapturing]: execute.")
+        _data.update { it.copy(
+            capturedImagePath = Uri.fromFile(File(path))
+        ) }
     }
 
-    override fun onCameraClosed() {
-        Logger.info(TAG, "[onCameraClosed]: execute.")
-        _uiState.update {
-            it.copy(
-                isCameraStarted = false
-            )
+    override fun capturePhoto() {
+        Logger.info(TAG, "[capturePhoto]: execute.")
+        _takeImageUseCase(
+            imageCapture = _data.value.imageCapture!!,
+            onSuccess = { file ->
+                Logger.info(TAG, "[capturePhoto]: executed successfully with file : ${file.absolutePath}")
+                updateCapturedImage(file.absolutePath)
+                onStateChanged(CameraScreenState.CAPTURE_FINISH)
+            },
+            onFailure = { exception ->
+                Logger.error(TAG, "[capturePhoto]: ", exception)
+            }
+        )
+    }
+
+    override fun initModel() {
+        Logger.info(TAG, "[initModel]: execute.")
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val modelDir = ModelAssetManager.prepare(Context.get())
+                val success = NativeOcr.nativeInit(modelDir)
+                if (!success) {
+                    Logger.error(TAG, "[initModel]: Failed to initialize native OCR model.")
+                }
+            } catch (e: Exception) {
+                Logger.error(TAG, "[initModel]: Native OCR initialization failed.", e)
+            }
         }
     }
 
