@@ -5,7 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.MaterialTheme
-import com.advance.neuraldigit_ocr.screens.HomeScreen
+import com.advance.neuraldigit_ocr.screens.CameraScreen
 import com.advance.neuraldigit_ocr.viewmodel.OcrViewModel
 
 class MainActivity : ComponentActivity() {
@@ -16,7 +16,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 enableEdgeToEdge()
-                HomeScreen(vm = OcrViewModel())
+                CameraScreen()
             }
         }
 

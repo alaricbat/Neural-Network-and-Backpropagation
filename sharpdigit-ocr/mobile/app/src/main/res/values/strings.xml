@@ -1,4 +1,12 @@
 <resources>
     <string name="app_name">Digit OCR</string>
     <string name="str_capture_image">Capture Image</string>
+    <string name="str_grant_camera">Grant Camera</string>
+    <string name="str_camera_is_denied">"Whoops! Looks like we need your camera to work our magic!
+        Don't worry, we just wanna see your pretty image.
+        Grant us permission and let's get this party started!"</string>
+    <string name="str_camera_is_first_access">"Hi there! We need your camera to work our magic! ✨
+        Grant us permission and let's get this party started!"</string>
+    <string name="str_camera_is_granted">Please open the camera to check!</string>
+
 </resources>
