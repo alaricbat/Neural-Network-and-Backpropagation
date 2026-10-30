@@ -9,4 +9,8 @@ interface IViewModelBehavior {
 
     fun onPermissionResult(cameraPermissionState: CameraPermissionState)
 
+    fun onCameraStarted()
+
+    fun onCameraClosed()
+
 }

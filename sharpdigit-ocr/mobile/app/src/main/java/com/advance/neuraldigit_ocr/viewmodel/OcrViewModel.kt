@@ -1,7 +1,9 @@
 package com.advance.neuraldigit_ocr.viewmodel
 
+import androidx.camera.core.ImageCapture
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.advance.neuraldigit_ocr.data.OcrData
 import com.advance.neuraldigit_ocr.mvi.CameraEffect
 import com.advance.neuraldigit_ocr.mvi.CameraIntent
 import com.advance.neuraldigit_ocr.mvi.HomeUiState
@@ -14,15 +16,24 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class OcrViewModel : ViewModel(), IViewModelBehavior {
+private const val TAG = "OcrViewModel"
 
-    private val TAG = "OcrViewModel"
+class OcrViewModel : ViewModel(), IViewModelBehavior {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()
 
     private val _effect = Channel<CameraEffect>()
     val effect = _effect.receiveAsFlow()
+
+    private val _data = MutableStateFlow(OcrData())
+    val data = _data.asStateFlow()
+
+    fun setImageCapture(imageCapture: ImageCapture?) {
+        _data.update {
+            it.copy(imageCapture = imageCapture)
+        }
+    }
 
     override fun onIntent(intent: CameraIntent) {
         Logger.info(TAG, "[onIntent]: execute.")
@@ -52,7 +63,10 @@ class OcrViewModel : ViewModel(), IViewModelBehavior {
             }
 
             CameraIntent.RetryClicked -> {
-                Logger.info(TAG, "[onIntent]: intent => RetryClicked")
+                Logger.info(
+                    TAG,
+                    "[onIntent]: intent => RetryClicked"
+                )
             }
         }
     }
@@ -63,6 +77,24 @@ class OcrViewModel : ViewModel(), IViewModelBehavior {
             it.copy(
                 cameraPermission = cameraPermissionState,
                 isCameraReady = cameraPermissionState == CameraPermissionState.GRANTED
+            )
+        }
+    }
+
+    override fun onCameraStarted() {
+        Logger.info(TAG, "[onCameraStarted]: execute.")
+        _uiState.update {
+            it.copy(
+                isCameraStarted = true
+            )
+        }
+    }
+
+    override fun onCameraClosed() {
+        Logger.info(TAG, "[onCameraClosed]: execute.")
+        _uiState.update {
+            it.copy(
+                isCameraStarted = false
             )
         }
     }

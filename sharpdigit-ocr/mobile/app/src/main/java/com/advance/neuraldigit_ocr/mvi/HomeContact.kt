@@ -4,6 +4,7 @@ import com.advance.neuraldigit_ocr.state.CameraPermissionState
 
 data class HomeUiState(
     val cameraPermission: CameraPermissionState = CameraPermissionState.UNKNOWN,
+    val isCameraStarted: Boolean = false,
     val isCameraReady: Boolean = false,
     val isCapturing: Boolean = false,
     val isRecognizing: Boolean = false,
@@ -21,5 +22,6 @@ sealed interface CameraIntent {
 sealed interface CameraEffect {
     data object RequestCameraPermission: CameraEffect
     data object StartCamera: CameraEffect
+    data object StopCamera: CameraEffect
     data class ShowError(val msg: String): CameraEffect
 }

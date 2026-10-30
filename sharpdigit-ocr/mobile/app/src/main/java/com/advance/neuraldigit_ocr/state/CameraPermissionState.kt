@@ -4,5 +4,4 @@ enum class CameraPermissionState {
     UNKNOWN,
     GRANTED,
     DENIED,
-    PERMANENTLY_DENIED
 }

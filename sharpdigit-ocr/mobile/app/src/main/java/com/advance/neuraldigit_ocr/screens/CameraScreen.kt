@@ -1,6 +1,9 @@
 package com.advance.neuraldigit_ocr.screens
 
 import android.Manifest
+import android.app.Activity
+import android.content.Context
+import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +26,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -32,6 +37,7 @@ import com.advance.neuraldigit_ocr.mvi.CameraEffect
 import com.advance.neuraldigit_ocr.mvi.CameraIntent
 import com.advance.neuraldigit_ocr.state.CameraPermissionState
 import com.advance.neuraldigit_ocr.utils.Logger
+import com.advance.neuraldigit_ocr.utils.TakePhotoUtil
 import com.advance.neuraldigit_ocr.viewmodel.OcrViewModel
 
 private val TAG = "CameraScreen"
@@ -40,7 +46,9 @@ private val TAG = "CameraScreen"
 fun CameraScreen() {
 
     val context = LocalContext.current
+
     val owner = context as ViewModelStoreOwner
+
     val viewModel = remember(owner) {
         ViewModelProvider(
             owner,
@@ -58,6 +66,7 @@ fun CameraScreen() {
         }
         viewModel.onPermissionResult(permissionState)
     }
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(viewModel) {
@@ -65,15 +74,25 @@ fun CameraScreen() {
 
         viewModel.effect.collect { effect ->
             Logger.info(TAG, "[LaunchedEffect]: received => $effect")
-            when(effect) {
+            when (effect) {
                 CameraEffect.RequestCameraPermission -> {
-                    Logger.info(TAG, "[LaunchedEffect]: effect => CameraEffect.RequestCameraPermission")
+                    Logger.info(
+                        TAG,
+                        "[LaunchedEffect]: effect => CameraEffect.RequestCameraPermission"
+                    )
                     permissionLauncher.launch(Manifest.permission.CAMERA)
                 }
+
                 CameraEffect.StartCamera -> {
                     Logger.info(TAG, "[LaunchedEffect]: effect => CameraEffect.StartCamera")
-
+                    viewModel.onCameraStarted()
                 }
+
+                CameraEffect.StopCamera -> {
+                    Logger.info(TAG, "[LaunchedEffect]: effect => CameraEffect.StopCamera")
+                    viewModel.onCameraClosed()
+                }
+
                 is CameraEffect.ShowError -> {
                     Logger.info(TAG, "[LaunchedEffect]: effect => CameraEffect.ShowError")
                 }
@@ -81,7 +100,32 @@ fun CameraScreen() {
         }
     }
 
-    Column (
+    LaunchedEffect(Unit) {
+        val granted = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+        val permissionState = if (granted) {
+            CameraPermissionState.GRANTED
+        } else {
+            CameraPermissionState.DENIED
+        }
+
+        val shouldShowRationale =
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                context as Activity,
+                Manifest.permission.CAMERA
+            )
+
+        Logger.info(
+            TAG,
+            "[LaunchedEffect-PermissionCheck]: granted=$granted, rationale=$shouldShowRationale"
+        )
+
+        viewModel.onPermissionResult(permissionState)
+    }
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp),
@@ -89,7 +133,17 @@ fun CameraScreen() {
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)
     ) {
 
-        when(uiState.cameraPermission) {
+        when (uiState.isCameraStarted) {
+            true -> {
+                StartCameraComponents(context, viewModel)
+            }
+
+            false -> {
+                Logger.info(TAG, "[uiState.isCameraStarted]: camera is closed.")
+            }
+        }
+
+        when (uiState.cameraPermission) {
 
             CameraPermissionState.UNKNOWN -> {
                 UngrantedComponents(viewModel, R.string.str_camera_is_first_access)
@@ -100,10 +154,6 @@ fun CameraScreen() {
             }
 
             CameraPermissionState.DENIED -> {
-                UngrantedComponents(viewModel, R.string.str_camera_is_denied)
-            }
-
-            CameraPermissionState.PERMANENTLY_DENIED -> {
                 UngrantedComponents(viewModel, R.string.str_camera_is_denied)
             }
 
@@ -142,9 +192,9 @@ private fun GrantedComponents(viewModel: OcrViewModel) {
         textAlign = TextAlign.Center
     )
 
-    OutlinedButton (
+    OutlinedButton(
         modifier = Modifier.fillMaxWidth(),
-        onClick =  {
+        onClick = {
             Logger.info(TAG, "[GrantedComponents][CapturedClick-Button]: execute.")
             viewModel.onIntent(CameraIntent.CapturedClick)
         }
@@ -152,6 +202,38 @@ private fun GrantedComponents(viewModel: OcrViewModel) {
         Text(
             text = stringResource(R.string.str_capture_image)
         )
+    }
+}
+
+@Composable
+private fun StartCameraComponents(context: Context, vm: OcrViewModel) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        CameraPreview(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            onReady = { imageCapture ->
+                vm.setImageCapture(imageCapture)
+            },
+            onError = { message ->
+                Logger.error(TAG, message)
+            }
+        )
+        Button(
+            onClick = {
+                vm.data.value.imageCapture?.let { capture ->
+                    TakePhotoUtil.takePhoto(
+                        context = context,
+                        imageCapture = capture
+                    )
+                }
+            }
+        ) {
+            Text(stringResource(R.string.str_capture))
+        }
     }
 }
 

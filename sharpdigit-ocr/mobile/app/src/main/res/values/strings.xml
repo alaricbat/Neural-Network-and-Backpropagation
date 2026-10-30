@@ -8,5 +8,5 @@
     <string name="str_camera_is_first_access">"Hi there! We need your camera to work our magic! ✨
         Grant us permission and let's get this party started!"</string>
     <string name="str_camera_is_granted">Please open the camera to check!</string>
-
+    <string name="str_capture">Capture</string>
 </resources>
