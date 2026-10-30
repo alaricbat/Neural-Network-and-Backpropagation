@@ -1,5 +1,6 @@
 package com.advance.neuraldigit_ocr.viewmodel
 
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.camera.core.ImageCapture
 import androidx.lifecycle.ViewModel
@@ -82,7 +83,18 @@ class OcrViewModel() : ViewModel(), IViewModelBehavior {
                         val uri = _data.value.capturedImagePath
                             ?: throw IllegalStateException("Image URI is null")
                         val bitmap = BitmapFactory.uriToBitmap(Context.get(), uri)
-                        val result = NativeOcr.nativePredict(bitmap)
+                        Logger.info(TAG, "[onIntent][PredictClicked]: Bitmap width: ${bitmap.width}")
+                        Logger.info(TAG, "[onIntent][PredictClicked]: Bitmap height: ${bitmap.height}")
+                        Logger.info(TAG, "[onIntent][PredictClicked]: Bitmap config: ${bitmap.config}")
+                        Logger.info(TAG, "[onIntent][PredictClicked]: Bitmap mutable: ${bitmap.isMutable}")
+                        Logger.info(TAG, "[onIntent][PredictClicked]: Bitmap recycled: ${bitmap.isRecycled}")
+                        val inputBitmap = bitmap.copy(
+                            Bitmap.Config.ARGB_8888,
+                            false
+                        ) ?: throw IllegalStateException("Cannot convert Bitmap to ARGB_8888")
+
+                        val result = NativeOcr.nativePredict(inputBitmap)
+                        Logger.info(TAG, "[onIntent][PredictClicked]: Result: ${result}")
                         _data.update {
                             it.copy(
                                 predictedValue = result

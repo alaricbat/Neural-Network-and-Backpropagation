@@ -160,8 +160,7 @@ fun CameraScreen() {
             }
             CameraScreenState.OCR_FINISH -> {
                 Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.OCR_FINISH")
-                Toast.makeText(context, vm.data.value.predictedValue, Toast.LENGTH_SHORT)
-                vm.onStateChanged(CameraScreenState.IMAGE_PREVIEW)
+                Toast.makeText(context, vm.data.value.predictedValue.toString(), Toast.LENGTH_SHORT)
             }
             CameraScreenState.ERROR -> {
                 Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.ERROR")
