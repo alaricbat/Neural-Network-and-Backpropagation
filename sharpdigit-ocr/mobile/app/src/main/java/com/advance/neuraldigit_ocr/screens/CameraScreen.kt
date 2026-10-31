@@ -3,7 +3,6 @@ package com.advance.neuraldigit_ocr.screens
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -160,7 +160,7 @@ fun CameraScreen() {
             }
             CameraScreenState.OCR_FINISH -> {
                 Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.OCR_FINISH")
-                Toast.makeText(context, vm.data.value.predictedValue.toString(), Toast.LENGTH_SHORT)
+                PredictedComponents(vm)
             }
             CameraScreenState.ERROR -> {
                 Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.ERROR")
@@ -285,6 +285,36 @@ private fun CapturedImageComponents(vm: OcrViewModel) {
         }
     }
 
+}
+
+@SuppressLint("StateFlowValueCalledInComposition")
+@Composable
+private fun PredictedComponents(vm: OcrViewModel) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            modifier = Modifier.padding(bottom = 10.dp),
+            text = "The predicted number is",
+            fontSize = 15.sp
+        )
+        Text(
+            text = vm.data.value.predictedValue.toString(),
+            fontSize = 50.sp
+        )
+        Button(
+            onClick = {
+                Logger.info(TAG, "[CapturedImageComponent][PredictBack-Button]: execute.")
+                vm.onIntent(CameraIntent.PredictBack)
+            }
+        ) {
+            Text(
+                text = stringResource(R.string.str_back)
+            )
+        }
+    }
 }
 
 @Preview

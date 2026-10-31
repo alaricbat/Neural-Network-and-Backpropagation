@@ -116,6 +116,16 @@ class OcrViewModel() : ViewModel(), IViewModelBehavior {
                     _effect.send(CameraEffect.StopCamera)
                 }
             }
+
+            CameraIntent.PredictBack -> {
+                Logger.info(
+                    TAG,
+                    "[onIntent]: intent => PredictBack"
+                )
+                viewModelScope.launch {
+                    onStateChanged(CameraScreenState.IMAGE_PREVIEW)
+                }
+            }
         }
     }
 

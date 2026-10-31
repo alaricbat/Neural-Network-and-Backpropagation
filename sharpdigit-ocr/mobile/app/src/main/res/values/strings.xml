@@ -10,4 +10,5 @@
     <string name="str_camera_is_granted">Please open the camera to check!</string>
     <string name="str_capture">Capture</string>
     <string name="str_predict">Predict</string>
+    <string name="str_back">Back</string>
 </resources>

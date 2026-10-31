@@ -11,6 +11,8 @@ sealed interface CameraIntent {
     data object CapturedClicked : CameraIntent
     data object PredictClicked : CameraIntent
     data object CameraCancel : CameraIntent
+
+    data object PredictBack : CameraIntent
 }
 
 sealed interface CameraEffect {
