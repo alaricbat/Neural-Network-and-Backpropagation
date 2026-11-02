@@ -69,14 +69,13 @@ if(ANDROID)
     message(STATUS "Building for Android")
 
     set(OpenCV_DIR
-            "${CMAKE_CURRENT_SOURCE_DIR}/third_party/OpenCV-android-sdk/sdk/native/jni"
+            "$ENV{HOME}/OpenCV-android-sdk/sdk/native/jni"
     )
 
     find_package(OpenCV REQUIRED)
 
     add_library(sharpdigit_ocr SHARED
             ${CORE_SOURCES}
-            src/android/JniOcr.cpp
     )
 
     target_include_directories(sharpdigit_ocr PRIVATE

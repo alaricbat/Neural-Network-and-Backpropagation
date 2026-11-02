@@ -5,7 +5,7 @@ import android.graphics.Bitmap
 object NativeOcr {
 
     init {
-        System.loadLibrary("sharpdigit_ocr")
+        System.loadLibrary("nativelib")
     }
 
     external fun nativeInit(modelDir: String): Boolean

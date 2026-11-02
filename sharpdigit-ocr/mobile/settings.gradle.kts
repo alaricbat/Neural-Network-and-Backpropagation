@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "NeuralDigit-OCR"
 include(":app")
+include(":nativelib")

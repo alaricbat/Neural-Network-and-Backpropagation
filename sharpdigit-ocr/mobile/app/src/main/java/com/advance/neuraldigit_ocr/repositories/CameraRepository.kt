@@ -21,6 +21,11 @@ class CameraRepository : BaseRepository(), ICameraRepository {
     ) {
         Logger.info(TAG, "[takePhoto]: execute.")
 
+        val outputDirectory = Context.get().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        outputDirectory?.listFiles { file ->
+            file.name.startsWith("OCR_") && file.name.endsWith(".jpg")
+        }?.forEach { it.delete() }
+
         val photoFile = File(
             Context.get().getExternalFilesDir(Environment.DIRECTORY_PICTURES),
             "OCR_${System.currentTimeMillis()}.jpg"
