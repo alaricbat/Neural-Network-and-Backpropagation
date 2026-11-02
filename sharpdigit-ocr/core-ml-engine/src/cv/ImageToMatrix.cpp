@@ -32,5 +32,4 @@ Matrix ImageToMatrix::convert(const cv::Mat &img) const {
     }
 
     return input;
-
 }

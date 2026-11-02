@@ -18,7 +18,6 @@ public:
 
     ImageProcessor(
             std::unique_ptr<IImageFilter> filter,
-            std::unique_ptr<IDigitCropper> cropper,
             std::unique_ptr<IImageResizer> resizer,
             std::unique_ptr<IImageToMatrix> converter
     );
@@ -28,7 +27,6 @@ public:
 
 private:
     std::unique_ptr<IImageFilter> filter_;
-    std::unique_ptr<IDigitCropper> cropper_;
     std::unique_ptr<IImageResizer> resizer_;
     std::unique_ptr<IImageToMatrix> converter_;
 };

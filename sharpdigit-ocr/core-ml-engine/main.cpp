@@ -50,7 +50,7 @@ int main() {
 
         for (int i = 0; i < 10; i++) {
 
-            const std::string filename = "mnist_0" + std::to_string(i) + ".jpg";
+            const std::string filename = "OCR_00" + std::to_string(i) + ".jpg";
             cout << "[main]: >> The file  name: " << filename << endl;
             const std::filesystem::path img_path = filesystem::current_path() / "assets" / "images" / filename;
 
