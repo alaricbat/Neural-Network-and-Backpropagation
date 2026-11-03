@@ -7,7 +7,6 @@ enum class CameraScreenState {
     CAMERA_PREVIEW_CANCEL,
     CAPTURE_PROCESSING,
     CAPTURE_FINISH,
-
     IMAGE_PREVIEW,
     OCR_PROCESSING,
     OCR_FINISH,

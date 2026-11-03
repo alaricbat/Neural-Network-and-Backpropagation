@@ -10,14 +10,14 @@ import com.advance.neuraldigit_ocr.utils.Context
 import com.advance.neuraldigit_ocr.utils.Logger
 import java.io.File
 
-private const val TAG = "CameraRepository"
-
 class CameraRepository : BaseRepository(), ICameraRepository {
+
+    private val TAG = "CameraRepository"
 
     override fun takePicture(
         imageCapture: ImageCapture,
-        onImgSaved: (File) -> Unit,
-        onError: (ImageCaptureException) -> Unit
+        onSuccess: (File) -> Unit,
+        onFailure: (ImageCaptureException) -> Unit
     ) {
         Logger.info(TAG, "[takePhoto]: execute.")
 
@@ -41,12 +41,12 @@ class CameraRepository : BaseRepository(), ICameraRepository {
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     Logger.info(TAG, "[onImageSaved]: execute.")
-                    onImgSaved(photoFile)
+                    onSuccess(photoFile)
                 }
 
                 override fun onError(exception: ImageCaptureException) {
                     Logger.error(TAG, "[onError]: execute.")
-                    onError(exception)
+                    onFailure(exception)
                 }
             }
         )

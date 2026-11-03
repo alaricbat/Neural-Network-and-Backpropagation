@@ -8,8 +8,8 @@ interface ICameraRepository {
 
     fun takePicture(
         imageCapture: ImageCapture,
-        onImgSaved: (File) -> Unit,
-        onError: (ImageCaptureException) -> Unit
+        onSuccess: (File) -> Unit,
+        onFailure: (ImageCaptureException) -> Unit
     )
 
 }

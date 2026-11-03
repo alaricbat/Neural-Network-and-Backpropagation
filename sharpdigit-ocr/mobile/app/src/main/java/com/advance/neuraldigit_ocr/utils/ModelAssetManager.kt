@@ -3,9 +3,9 @@ package com.advance.neuraldigit_ocr.utils
 import android.content.Context
 import java.io.File
 
-const val TAG = "ModelAssetManager"
-
 object ModelAssetManager {
+
+    private const val TAG = "ModelAssetManager"
 
     private val modelFiles = listOf(
         "b_0.bin",

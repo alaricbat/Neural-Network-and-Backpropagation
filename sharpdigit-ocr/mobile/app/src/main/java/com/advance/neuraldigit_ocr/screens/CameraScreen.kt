@@ -127,40 +127,55 @@ fun CameraScreen() {
                 Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.IDLE")
                 UngrantedComponents(vm, R.string.str_camera_idle)
             }
+
             CameraScreenState.CAMERA_GRANTED -> {
                 Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.CAMERA_GRANTED")
                 GrantedComponents(vm)
             }
+
             CameraScreenState.CAMERA_PREVIEW -> {
                 Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.CAMERA_PREVIEW")
                 StartCameraComponents(vm)
             }
+
             CameraScreenState.CAMERA_PREVIEW_CANCEL -> {
-                Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.CAMERA_PREVIEW_CANCEL")
+                Logger.info(
+                    TAG,
+                    "[uiState.cameraScreenState]: CameraScreenState.CAMERA_PREVIEW_CANCEL"
+                )
                 if (vm.data.value.capturedImagePath != null) {
                     vm.onStateChanged(CameraScreenState.IMAGE_PREVIEW)
                 } else {
                     vm.onStateChanged(CameraScreenState.CAMERA_GRANTED)
                 }
             }
+
             CameraScreenState.CAPTURE_PROCESSING -> {
-                Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.CAPTURE_PROCESSING")
+                Logger.info(
+                    TAG,
+                    "[uiState.cameraScreenState]: CameraScreenState.CAPTURE_PROCESSING"
+                )
             }
+
             CameraScreenState.CAPTURE_FINISH -> {
                 Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.CAPTURE_FINISH")
                 vm.onStateChanged(CameraScreenState.IMAGE_PREVIEW)
             }
+
             CameraScreenState.IMAGE_PREVIEW -> {
                 Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.IMAGE_PREVIEW")
                 CapturedImageComponents(vm)
             }
+
             CameraScreenState.OCR_PROCESSING -> {
                 Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.OCR_PROCESSING")
             }
+
             CameraScreenState.OCR_FINISH -> {
                 Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.OCR_FINISH")
                 PredictedComponents(vm)
             }
+
             CameraScreenState.ERROR -> {
                 Logger.info(TAG, "[uiState.cameraScreenState]: CameraScreenState.ERROR")
             }

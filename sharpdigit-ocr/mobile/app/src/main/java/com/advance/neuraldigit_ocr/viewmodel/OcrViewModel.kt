@@ -1,6 +1,5 @@
 package com.advance.neuraldigit_ocr.viewmodel
 
-import android.graphics.Bitmap
 import android.net.Uri
 import androidx.camera.core.ImageCapture
 import androidx.lifecycle.ViewModel
@@ -10,12 +9,10 @@ import com.advance.neuraldigit_ocr.mvi.CameraEffect
 import com.advance.neuraldigit_ocr.mvi.CameraIntent
 import com.advance.neuraldigit_ocr.mvi.CameraUiState
 import com.advance.neuraldigit_ocr.state.CameraScreenState
+import com.advance.neuraldigit_ocr.usecase.InitUseCase
+import com.advance.neuraldigit_ocr.usecase.RecognizeUseCase
 import com.advance.neuraldigit_ocr.usecase.TakeImageUseCase
-import com.advance.neuraldigit_ocr.utils.BitmapFactory
-import com.advance.neuraldigit_ocr.utils.Context
 import com.advance.neuraldigit_ocr.utils.Logger
-import com.advance.neuraldigit_ocr.utils.ModelAssetManager
-import com.advance.neuraldigit_ocr.utils.NativeOcr
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,9 +22,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
 
-private const val TAG = "OcrViewModel"
-
 class OcrViewModel() : ViewModel(), IViewModelBehavior {
+
+    private val TAG = "OcrViewModel"
 
     private val _uiState = MutableStateFlow(CameraUiState())
     val uiState = _uiState.asStateFlow()
@@ -39,6 +36,10 @@ class OcrViewModel() : ViewModel(), IViewModelBehavior {
     val data = _data.asStateFlow()
 
     private val _takeImageUseCase = TakeImageUseCase()
+
+    private val _recognizeUseCase = RecognizeUseCase()
+
+    private val _initUseCase = InitUseCase()
 
     fun setImageCapture(imageCapture: ImageCapture?) {
         _data.update {
@@ -82,25 +83,31 @@ class OcrViewModel() : ViewModel(), IViewModelBehavior {
                     try {
                         val uri = _data.value.capturedImagePath
                             ?: throw IllegalStateException("Image URI is null")
-                        val bitmap = BitmapFactory.uriToBitmap(Context.get(), uri)
-                        Logger.info(TAG, "[onIntent][PredictClicked]: Bitmap width: ${bitmap.width}")
-                        Logger.info(TAG, "[onIntent][PredictClicked]: Bitmap height: ${bitmap.height}")
-                        Logger.info(TAG, "[onIntent][PredictClicked]: Bitmap config: ${bitmap.config}")
-                        Logger.info(TAG, "[onIntent][PredictClicked]: Bitmap mutable: ${bitmap.isMutable}")
-                        Logger.info(TAG, "[onIntent][PredictClicked]: Bitmap recycled: ${bitmap.isRecycled}")
-                        val inputBitmap = bitmap.copy(
-                            Bitmap.Config.ARGB_8888,
-                            false
-                        ) ?: throw IllegalStateException("Cannot convert Bitmap to ARGB_8888")
+                        _recognizeUseCase(
+                            uri = uri,
+                            onSuccess = { result ->
+                                Logger.info(
+                                    TAG,
+                                    "[onSuccess][PredictClicked]: predict success."
+                                )
+                                _data.update {
+                                    it.copy(
+                                        predictedValue = result
+                                    )
+                                }
+                                onStateChanged(CameraScreenState.OCR_FINISH)
+                            },
+                            onFailure = { exception ->
+                                Logger.info(
+                                    TAG,
+                                    "[onFailure][PredictClicked]: predict fail."
+                                )
+                                Logger.error(TAG,
+                                    "[onFailure][PredictClicked]: ",
+                                    exception)
+                            }
+                        )
 
-                        val result = NativeOcr.nativePredict(inputBitmap)
-                        Logger.info(TAG, "[onIntent][PredictClicked]: Result: ${result}")
-                        _data.update {
-                            it.copy(
-                                predictedValue = result
-                            )
-                        }
-                        onStateChanged(CameraScreenState.OCR_FINISH)
                     } catch (e: Exception) {
                         Logger.error(TAG, "[onIntent][PredictClicked]: ", e)
                     }
@@ -163,15 +170,17 @@ class OcrViewModel() : ViewModel(), IViewModelBehavior {
     override fun initModel() {
         Logger.info(TAG, "[initModel]: execute.")
         viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val modelDir = ModelAssetManager.prepare(Context.get())
-                val success = NativeOcr.nativeInit(modelDir)
-                if (!success) {
-                    Logger.error(TAG, "[initModel]: Failed to initialize native OCR model.")
+            _initUseCase(
+                onSuccess = {
+                    Logger.info(TAG, "[initModel]: init success.")
+                },
+                onFailure = { exception ->
+                    Logger.error(
+                        TAG,
+                        "[initModel]: Native OCR initialization failed.",
+                        exception)
                 }
-            } catch (e: Exception) {
-                Logger.error(TAG, "[initModel]: Native OCR initialization failed.", e)
-            }
+            )
         }
     }
 
